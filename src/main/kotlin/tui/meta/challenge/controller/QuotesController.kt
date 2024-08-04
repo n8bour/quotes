@@ -15,7 +15,7 @@ class QuotesController(private val service : QuotesService) {
 
     @Get("/{id}")
     fun getQuoteById(@PathVariable id: String): HttpResponse<Quote> {
-        val quote = service.findBy(id)
+        val quote = service.findById(id)
 
         return quote?.let { HttpResponse.ok(it) } ?: HttpResponse.notFound()
     }

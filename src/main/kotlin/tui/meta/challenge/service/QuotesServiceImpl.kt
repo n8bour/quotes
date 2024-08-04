@@ -10,7 +10,7 @@ class QuotesServiceImpl(private val quotesRepository: QuotesRepository) : Quotes
         return quotesRepository.findAll()
     }
 
-    override fun findBy(id: String): Quote? {
+    override fun findById(id: String): Quote? {
         return quotesRepository.findById(id).orElse(null)
     }
 
