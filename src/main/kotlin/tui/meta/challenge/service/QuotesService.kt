@@ -1,10 +1,10 @@
 package tui.meta.challenge.service
 
-import tui.meta.challenge.model.Quote
+import tui.meta.challenge.model.QuoteDTO
 
 interface QuotesService {
 
-    fun findAll(): List<Quote>
-    fun findById(id: String): Quote?
-    fun findByAuthor(author: String): List<Quote>
+    fun findAll(): List<QuoteDTO>
+    fun findById(id: String): QuoteDTO?
+    fun findByAuthor(author: String): List<QuoteDTO>
 }

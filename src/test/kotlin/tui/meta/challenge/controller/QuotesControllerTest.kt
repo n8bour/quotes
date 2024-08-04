@@ -2,6 +2,7 @@ package tui.meta.challenge.controller
 
 import io.kotest.core.spec.style.BehaviorSpec
 import io.kotest.matchers.shouldBe
+import io.micronaut.http.HttpResponse
 import io.micronaut.http.HttpStatus
 import io.micronaut.http.client.annotation.Client
 import io.micronaut.test.annotation.MockBean
@@ -9,85 +10,83 @@ import io.micronaut.test.extensions.kotest5.MicronautKotest5Extension.getMock
 import io.micronaut.test.extensions.kotest5.annotation.MicronautTest
 import io.mockk.every
 import io.mockk.mockk
-import tui.meta.challenge.QuotesClient
-import tui.meta.challenge.model.Quote
-import tui.meta.challenge.service.QuotesService
-import tui.meta.challenge.utils.QuotesTestUtils.LIST_DATA
+import tui.meta.challenge.entity.Quote
+import tui.meta.challenge.mapper.QuoteMapper.toDTO
+import tui.meta.challenge.model.QuoteDTO
+import tui.meta.challenge.repository.QuotesRepository
+import java.util.*
 
 @MicronautTest
 class QuotesControllerTest(
-    private val quotesService: QuotesService,
+    private val quotesRepository: QuotesRepository,
     @Client private val client: QuotesClient
 ) : BehaviorSpec({
 
     given("QuotesController") {
         `when`("get all quotes") {
             then("returns a list of quotes") {
-                val service = getMock(quotesService)
-                every { service.findAll() } answers {
+                val repository = getMock(quotesRepository)
+                every { repository.findAll() } answers {
                     LIST_DATA
                 }
 
                 val result = client.getQuotes()
                 result.status shouldBe HttpStatus.OK
                 result.body().size shouldBe LIST_DATA.size
-                result.body()[0].quoteGenre shouldBe "someGenre"
+                result.body()[0].genre shouldBe "someGenre"
             }
         }
         `when`("get all quotes (no quotes available)") {
             then("returns empty list") {
-                val service = getMock(quotesService)
-                every { service.findAll() } answers {
+                val repository = getMock(quotesRepository)
+                every { repository.findAll() } answers {
                     emptyList()
                 }
 
                 val result = client.getQuotes()
-                result.status shouldBe HttpStatus.OK
-                result.body().size shouldBe 0
+                validateEmptyResponse(result)
             }
         }
-        `when`("get quotes by id is called with a valid id") {
+        `when`("get quotes by id with a valid id") {
             then("returns a quote with OK status") {
-                val service = getMock(quotesService)
+                val repository = getMock(quotesRepository)
                 val id = "someId"
-                val quote = LIST_DATA.firstOrNull { quote -> quote._id == id }
-                every { service.findById(id) } answers {
-                    quote
+                val quote = LIST_DATA.first { quote -> quote.id == id }
+                every { repository.findById(id) } answers {
+                    Optional.of(quote)
                 }
                 val result = client.getQuoteById(id)
                 result.status shouldBe HttpStatus.OK
-                result.body() shouldBe quote
+                result.body() shouldBe quote.toDTO()
             }
         }
-        `when`("get quotes by id is called with invalid id") {
+        `when`("get quotes by id with invalid id") {
             then("returns not found status") {
-                val service = getMock(quotesService)
+                val repository = getMock(quotesRepository)
                 val id = "invalid_id"
-                every { service.findById(id) } answers {
-                    LIST_DATA.firstOrNull { quote -> quote._id == id }
+                every { repository.findById(id) } answers {
+                    Optional.ofNullable(null)
                 }
                 val result = client.getQuoteById(id)
-                result.status shouldBe HttpStatus.NOT_FOUND
-                result.body() shouldBe null
+                validateNotFoundResponse(result)
             }
         }
         `when`("get quotes by id no results") {
             then("returns a not found status") {
-                val service = getMock(quotesService)
-                every { service.findById(any()) } answers {
-                    null
+                val repository = getMock(quotesRepository)
+                every { repository.findById(any()) } answers {
+                    Optional.ofNullable(null)
                 }
                 val result = client.getQuoteById("valid_id")
-                result.status shouldBe HttpStatus.NOT_FOUND
-                result.body() shouldBe null
+                validateNotFoundResponse(result)
             }
         }
         `when`("get quotes by author is called with a valid author") {
             then("returns a list of quotes filtered by author") {
-                val service = getMock(quotesService)
+                val repository = getMock(quotesRepository)
                 val author = "someAuthor"
                 val authorQuotes = LIST_DATA.filter { quote: Quote -> quote.quoteAuthor == author }
-                every { service.findByAuthor(author) } answers {
+                every { repository.findByQuoteAuthor(author) } answers {
                     authorQuotes
                 }
                 val result = client.getQuotesByAuthor(author)
@@ -97,32 +96,48 @@ class QuotesControllerTest(
         }
         `when`("get quotes by author is called with a invalid author") {
             then("returns a empty list with status OK") {
-                val service = getMock(quotesService)
+                val repository = getMock(quotesRepository)
                 val author = "invalid author"
-                every { service.findByAuthor(author) } answers {
+                every { repository.findByQuoteAuthor(author) } answers {
                     emptyList()
                 }
                 val result = client.getQuotesByAuthor(author)
-                result.status shouldBe HttpStatus.OK
-                result.body().size shouldBe 0
+                validateEmptyResponse(result)
             }
         }
         `when`("get quotes by author (empty results)") {
             then("returns empty list") {
-                val service = getMock(quotesService)
-                every { service.findByAuthor(any()) } answers {
+                val repository = getMock(quotesRepository)
+                every { repository.findByQuoteAuthor(any()) } answers {
                     emptyList()
                 }
                 val result = client.getQuotesByAuthor("some author")
-                result.status shouldBe HttpStatus.OK
-                result.body().size shouldBe 0
+                validateEmptyResponse(result)
             }
         }
     }
 
 }) {
-    @MockBean(QuotesService::class)
-    fun mockService() = mockk<QuotesService>()
+    @MockBean(QuotesRepository::class)
+    fun mockedPostRepository() = mockk<QuotesRepository>()
+
+    companion object {
+        val LIST_DATA = listOf(
+            Quote("someId", "someGenre", "someAuthor", "some quote", 0),
+            Quote("someOtherId", "someOtherGenre", "someOtherAuthor", "some other quote", 0),
+            Quote("someIdAuthor", "someOtherGenre", "someAuthor", "some other quote", 0),
+        )
+
+        fun validateEmptyResponse(result: HttpResponse<List<QuoteDTO>>) {
+            result.status shouldBe HttpStatus.OK
+            result.body().size shouldBe 0
+        }
+
+        fun validateNotFoundResponse(result: HttpResponse<QuoteDTO>) {
+            result.status shouldBe HttpStatus.NOT_FOUND
+            result.body() shouldBe null
+        }
+    }
 }
 
 
