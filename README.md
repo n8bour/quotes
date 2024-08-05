@@ -1,35 +1,29 @@
-## Micronaut 4.3.8 Documentation
+## Tui Challenge
 
-- [User Guide](https://docs.micronaut.io/4.3.8/guide/index.html)
-- [API Reference](https://docs.micronaut.io/4.3.8/api/index.html)
-- [Configuration Reference](https://docs.micronaut.io/4.3.8/guide/configurationreference.html)
-- [Micronaut Guides](https://guides.micronaut.io/index.html)
----
-
-- [Micronaut Gradle Plugin documentation](https://micronaut-projects.github.io/micronaut-gradle-plugin/latest/)
-- [GraalVM Gradle Plugin documentation](https://graalvm.github.io/native-build-tools/latest/gradle-plugin.html)
-- [Shadow Gradle Plugin](https://plugins.gradle.org/plugin/com.github.johnrengelman.shadow)
-## Feature serialization-jackson documentation
-
-- [Micronaut Serialization Jackson Core documentation](https://micronaut-projects.github.io/micronaut-serialization/latest/guide/)
+- [ ] The app must be able to support 50 requests per second in up to 200 milliseconds for the search functionality by ID
+- [ ] The app must be able to support 50 requests per second in up to 200 milliseconds for the search functionality by author
+- [ ] The app must be able to answer in less than 30 seconds for the functionality to search all items in this collection.
 
 
-## Feature kotest documentation
+The test were done with [apache bench](https://httpd.apache.org/docs/2.4/programs/ab.html) a cli tool for benchmarking.<br>
+All the test used the same options/flags:
+- `-c` Number of multiple request at a time to perform
+- `-n` Number of requests to perform for the benchmarking session
 
-- [Micronaut Test Kotest5 documentation](https://micronaut-projects.github.io/micronaut-test/latest/guide/#kotest5)
+### Find By Author results
+```
+ab -c 50 -n 50 http://localhost:8080/quotes/authors/'Francis Bacon'
+```
+![first_request_by_author](results/first_request_by_author.png)
 
-- [https://kotest.io/](https://kotest.io/)
+### Find By Id Results
+```
+ab -c 50 -n 50 http://localhost:8080/quotes/5eb17aadb69dc744b4e70d5c
+```
+![first_request_by_id](results/first_request_by_id.png)
 
-
-## Feature ksp documentation
-
-- [Micronaut Kotlin Symbol Processing (KSP) documentation](https://docs.micronaut.io/latest/guide/#kotlin)
-
-- [https://kotlinlang.org/docs/ksp-overview.html](https://kotlinlang.org/docs/ksp-overview.html)
-
-
-## Feature micronaut-aot documentation
-
-- [Micronaut AOT documentation](https://micronaut-projects.github.io/micronaut-aot/latest/guide/)
-
-
+### Find all Quotes Results
+```
+ab -c 1-n 1 http://localhost:8080/quotes
+```
+![first_request_all_quotes](results/first_request_all_quotes.png)

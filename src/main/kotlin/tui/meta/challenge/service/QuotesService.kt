@@ -1,10 +1,12 @@
 package tui.meta.challenge.service
 
+import reactor.core.publisher.Flux
+import reactor.core.publisher.Mono
 import tui.meta.challenge.model.QuoteDTO
 
 interface QuotesService {
 
-    fun findAll(): List<QuoteDTO>
-    fun findById(id: String): QuoteDTO?
-    fun findByAuthor(author: String): List<QuoteDTO>
+    fun findAll(): Flux<QuoteDTO>
+    fun findById(id: String): Mono<QuoteDTO?>
+    fun findByAuthor(author: String): Flux<QuoteDTO>
 }

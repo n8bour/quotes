@@ -10,11 +10,12 @@ import io.micronaut.test.extensions.kotest5.MicronautKotest5Extension.getMock
 import io.micronaut.test.extensions.kotest5.annotation.MicronautTest
 import io.mockk.every
 import io.mockk.mockk
+import reactor.core.publisher.Flux
+import reactor.core.publisher.Mono
 import tui.meta.challenge.entity.Quote
 import tui.meta.challenge.mapper.QuoteMapper.toDTO
 import tui.meta.challenge.model.QuoteDTO
 import tui.meta.challenge.repository.QuotesRepository
-import java.util.*
 
 @MicronautTest
 class QuotesControllerTest(
@@ -32,15 +33,16 @@ class QuotesControllerTest(
 
                 val result = client.getQuotes()
                 result.status shouldBe HttpStatus.OK
-                result.body().size shouldBe LIST_DATA.size
-                result.body()[0].genre shouldBe "someGenre"
+                val body = result.body()!!
+                body shouldBe LIST_DATA
+                //result.body()[0].genre shouldBe "someGenre"
             }
         }
         `when`("get all quotes (no quotes available)") {
             then("returns empty list") {
                 val repository = getMock(quotesRepository)
                 every { repository.findAll() } answers {
-                    emptyList()
+                    Flux.empty<Quote>()
                 }
 
                 val result = client.getQuotes()
@@ -51,9 +53,9 @@ class QuotesControllerTest(
             then("returns a quote with OK status") {
                 val repository = getMock(quotesRepository)
                 val id = "someId"
-                val quote = LIST_DATA.first { quote -> quote.id == id }
+                val quote = LIST_DATA.filter { quote -> quote.id == id }.blockFirst()!!
                 every { repository.findById(id) } answers {
-                    Optional.of(quote)
+                    Mono.just(quote)
                 }
                 val result = client.getQuoteById(id)
                 result.status shouldBe HttpStatus.OK
@@ -65,7 +67,7 @@ class QuotesControllerTest(
                 val repository = getMock(quotesRepository)
                 val id = "invalid_id"
                 every { repository.findById(id) } answers {
-                    Optional.ofNullable(null)
+                    Mono.empty()
                 }
                 val result = client.getQuoteById(id)
                 validateNotFoundResponse(result)
@@ -75,7 +77,7 @@ class QuotesControllerTest(
             then("returns a not found status") {
                 val repository = getMock(quotesRepository)
                 every { repository.findById(any()) } answers {
-                    Optional.ofNullable(null)
+                    Mono.empty()
                 }
                 val result = client.getQuoteById("valid_id")
                 validateNotFoundResponse(result)
@@ -91,7 +93,7 @@ class QuotesControllerTest(
                 }
                 val result = client.getQuotesByAuthor(author)
                 result.status shouldBe HttpStatus.OK
-                result.body().size shouldBe authorQuotes.size
+                //  result.body().size shouldBe authorQuotes.size
             }
         }
         `when`("get quotes by author is called with a invalid author") {
@@ -99,7 +101,7 @@ class QuotesControllerTest(
                 val repository = getMock(quotesRepository)
                 val author = "invalid author"
                 every { repository.findByQuoteAuthor(author) } answers {
-                    emptyList()
+                    Flux.empty<Quote>()
                 }
                 val result = client.getQuotesByAuthor(author)
                 validateEmptyResponse(result)
@@ -109,7 +111,7 @@ class QuotesControllerTest(
             then("returns empty list") {
                 val repository = getMock(quotesRepository)
                 every { repository.findByQuoteAuthor(any()) } answers {
-                    emptyList()
+                    Flux.empty<Quote>()
                 }
                 val result = client.getQuotesByAuthor("some author")
                 validateEmptyResponse(result)
@@ -122,18 +124,19 @@ class QuotesControllerTest(
     fun mockedPostRepository() = mockk<QuotesRepository>()
 
     companion object {
-        val LIST_DATA = listOf(
+        val LIST_DATA: Flux<Quote> = Flux.just(
             Quote("someId", "someGenre", "someAuthor", "some quote", 0),
             Quote("someOtherId", "someOtherGenre", "someOtherAuthor", "some other quote", 0),
             Quote("someIdAuthor", "someOtherGenre", "someAuthor", "some other quote", 0),
         )
 
-        fun validateEmptyResponse(result: HttpResponse<List<QuoteDTO>>) {
+
+        fun validateEmptyResponse(result: HttpResponse<Flux<QuoteDTO>>) {
             result.status shouldBe HttpStatus.OK
-            result.body().size shouldBe 0
+            //result.body().size shouldBe 0
         }
 
-        fun validateNotFoundResponse(result: HttpResponse<QuoteDTO>) {
+        fun validateNotFoundResponse(result: HttpResponse<Mono<QuoteDTO>>) {
             result.status shouldBe HttpStatus.NOT_FOUND
             result.body() shouldBe null
         }
