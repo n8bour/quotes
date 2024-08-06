@@ -13,6 +13,7 @@ version = "0.1"
 group = "tui.meta.challenge"
 
 val kotlinVersion = project.properties.get("kotlinVersion")
+val kotlinCoVersion = project.properties.get("kotlinCoVersion")
 repositories {
     mavenCentral()
 }
@@ -28,6 +29,9 @@ dependencies {
     implementation("io.micronaut.reactor:micronaut-reactor-http-client")
     implementation("org.jetbrains.kotlin:kotlin-reflect:${kotlinVersion}")
     implementation("org.jetbrains.kotlin:kotlin-stdlib-jdk8:${kotlinVersion}")
+    implementation("org.jetbrains.kotlinx:kotlinx-coroutines-core:${kotlinCoVersion}")
+    implementation("org.jetbrains.kotlinx:kotlinx-coroutines-reactor:${kotlinCoVersion}")
+    implementation("org.jetbrains.kotlinx:kotlinx-coroutines-reactive:${kotlinCoVersion}")
     compileOnly("io.micronaut:micronaut-http-client")
     runtimeOnly("org.mongodb:mongodb-driver-reactivestreams")
     runtimeOnly("ch.qos.logback:logback-classic")
