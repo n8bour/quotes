@@ -5,5 +5,5 @@ import tui.meta.challenge.model.QuoteDTO
 
 object QuoteMapper {
     fun Quote.toDTO(): QuoteDTO =
-        QuoteDTO(quoteGenre, quoteAuthor, quoteText)
+        QuoteDTO(id, quoteGenre, quoteAuthor, quoteText)
 }
