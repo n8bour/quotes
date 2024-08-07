@@ -31,7 +31,7 @@ export default function () {
 
     check(res, {
         'status was 200': (r) => r.status === 200,
-        'Id is the one we fetched': (r) => r.json().author === quote.quoteAuthor
+        'Check if the first element is the Author we fetched': (r) => r.json()[0].author === quote.quoteAuthor
     });
     //console.log('Response time was ' + String(res.timings.duration) + ' ms');
 }

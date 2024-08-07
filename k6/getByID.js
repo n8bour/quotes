@@ -1,6 +1,6 @@
 import http from 'k6/http';
-import { check } from 'k6';
-import { SharedArray } from 'k6/data';
+import {check} from 'k6';
+import {SharedArray} from 'k6/data';
 
 const quotes = new SharedArray('data.json', function () {
     return JSON.parse(open('../src/main/docker/deployment/init-db/data.json'));
@@ -28,11 +28,11 @@ export const options = {
 //
 export default function () {
     const quote = quotes[Math.floor(Math.random() * quotes.length)];
-   const res =  http.get('http://localhost:8080/quotes/'+quote._id);
+    const res = http.get('http://localhost:8080/quotes/' + quote._id);
 
     check(res, {
         'status was 200': (r) => r.status === 200,
-       'Id is the one we fetched': (r)=> r.json().id ===quote._id
+        'Id is the one we fetched': (r) => r.json().id === quote._id
     });
-  // console.log('Response time was ' + String(res.timings.duration) + ' ms');
+    // console.log('Response time was ' + String(res.timings.duration) + ' ms');
 }
