@@ -2,6 +2,9 @@ package tui.meta.challenge.controller
 
 import io.kotest.core.spec.style.BehaviorSpec
 import io.kotest.matchers.shouldBe
+import io.micronaut.data.model.Page
+import io.micronaut.data.model.Pageable
+import io.micronaut.data.model.Sort
 import io.micronaut.http.HttpResponse
 import io.micronaut.http.HttpStatus
 import io.micronaut.http.client.annotation.Client
@@ -34,6 +37,21 @@ class QuotesControllerTest(
                 result.status shouldBe HttpStatus.OK
                 result.body().size shouldBe LIST_DATA.size
                 result.body()[0].genre shouldBe "someGenre"
+            }
+        }
+        `when`("get all quotes page") {
+            then("returns a page of quotes") {
+                val repository = getMock(quotesRepository)
+                val page: Pageable = Pageable.from(0, 1, Sort.UNSORTED)
+                every { repository.findAll(any()) } answers {
+                    Page.of(LIST_DATA, page, LIST_DATA.size.toLong())
+                }
+
+                val result = client.getPageableQuotes(page)
+                result.status shouldBe HttpStatus.OK
+                result.body().size shouldBe page.size
+                result.body().totalSize shouldBe LIST_DATA.size
+                result.body().content[0].genre shouldBe "someGenre"
             }
         }
         `when`("get all quotes (no quotes available)") {

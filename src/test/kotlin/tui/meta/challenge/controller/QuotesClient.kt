@@ -1,5 +1,7 @@
 package tui.meta.challenge.controller
 
+import io.micronaut.data.model.Page
+import io.micronaut.data.model.Pageable
 import io.micronaut.http.HttpResponse
 import io.micronaut.http.annotation.Get
 import io.micronaut.http.annotation.PathVariable
@@ -17,4 +19,7 @@ interface QuotesClient {
 
     @Get
     fun getQuotes(): HttpResponse<List<QuoteDTO>>
+
+    @Get("/pageable")
+    fun getPageableQuotes(pageable: Pageable): HttpResponse<Page<QuoteDTO>>
 }
