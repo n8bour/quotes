@@ -3,7 +3,7 @@ import {check} from 'k6';
 import {SharedArray} from 'k6/data';
 
 const quotes = new SharedArray('data.json', function () {
-    return JSON.parse(open('../src/main/docker/deployment/init-db/data.json'));
+    return JSON.parse(open('../docker/deployment/init-db/data.json'));
 });
 
 export const options = {
